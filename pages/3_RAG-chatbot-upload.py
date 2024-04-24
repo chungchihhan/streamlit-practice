@@ -7,10 +7,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
 import streamlit as st
 import os 
+import tempfile
 
-st.set_page_config(page_title="RAG Demo", page_icon="📈")
-
-st.title("NTU 115 chatbot")
+st.title("NTU 115 chatbot-upload")
 
 def load_text(file_path):
     loader = TextLoader(file_path)
@@ -60,15 +59,27 @@ def setup_response_generator(openai_api_key, _docs):
         | StrOutputParser()
     ))
 
+if "temp_dir" not in st.session_state:
+    st.session_state.temp_dir = tempfile.TemporaryDirectory()
+temp_dir_path = st.session_state.temp_dir.name
 
 with st.sidebar:
+    uploaded_file = st.file_uploader("Choose a PDF file")
+    if uploaded_file is not None:
+        file_path = os.path.join(temp_dir_path, uploaded_file.name)
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        st.success("Saved File")
+
+
     openai_api_key = st.secrets["OPENAI_API_KEY"]
-    files_list = sorted(os.listdir("files"))
+    files_list = os.listdir(temp_dir_path)
+
     if files_list and openai_api_key:
         # Set default selection to the first file in the list or any specific index
         default_index = len(files_list)-1 
         options = st.selectbox('Select a file:', files_list, index=default_index)
-        file_path = f"files/{options}"
+        file_path = f"{temp_dir_path}/{options}"
         docs = load_document(file_path)
         if 'file_path' not in st.session_state or st.session_state.file_path != file_path:
             st.session_state.file_path = file_path
@@ -76,16 +87,6 @@ with st.sidebar:
         with st.spinner("Your chatbot is cooking"):
             rag_chain_with_source = setup_response_generator(openai_api_key, docs)
         # st.toast("Your chatbot is ready !", icon='😍')
-
-        with open(file_path, "rb") as file:
-            file_data = file.read()
-        st.download_button(
-            label="Download the selected file",
-            data=file_data,
-            file_name=options,
-            mime='application/octet-stream',
-            use_container_width=True
-        )
 
 # Main code
 if openai_api_key and setup_response_generator :
