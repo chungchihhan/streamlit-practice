@@ -8,8 +8,9 @@ from langchain_community.document_loaders import TextLoader, PyPDFLoader
 import streamlit as st
 import os 
 
-st.set_page_config(layout="wide")
-st.title("NTU 115 chatbot")
+st.set_page_config(page_title="Editing Demo", page_icon="🌍", layout="wide")
+
+st.title("Editing Your File")
 col1, col2 = st.columns(2)
 
 def load_text(file_path):
